@@ -3,6 +3,7 @@
     <PackageReference Include="Twilio" Version="5.9.8" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Controller\Controller.csproj" />
     <ProjectReference Include="..\Model\Model.csproj" />
   </ItemGroup>
   <PropertyGroup>

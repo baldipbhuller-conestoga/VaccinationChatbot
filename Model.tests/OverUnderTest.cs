@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using Model;
+using Controller;
 
 namespace Model.tests
 {
