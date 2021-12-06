@@ -51,7 +51,7 @@ namespace Controller
 
             int idResult = DBAccess.InsertAccount(acc);
 
-            // returns non-zero ID when successful
+            // returns non-zero ID when successful and the account ID
             return idResult;
         }
 
@@ -65,9 +65,31 @@ namespace Controller
         {
             ClinicList = DBAccess.GetAllClinics();
         }
-        public void LoadBooking()
+        public string GetBookingInfo(string referenceNumber)
         {
-            BookingList = DBAccess.GetAllBookingsOfUser(LoggedinAccount.AccountID);
+            string bookingInfo = string.Empty;
+            Booking? bkg = DBAccess.GetBookingByReferenceNumber(referenceNumber);
+
+            if(!string.IsNullOrEmpty(bkg.ReferenceNumber))
+            {
+                LoadAccounts();
+                LoadClinics();
+
+                Account accFound = AccountList.Find(a => a.AccountID == bkg.AccountID);
+                Clinic clinicFound = ClinicList.Find(c => c.ClinicID == bkg.ClinicID);
+
+                bookingInfo = "Booking Found Reference Number: " + bkg.ReferenceNumber + "\n" +
+                              "Name: " + accFound.FName + " " + accFound.MName + " " + accFound.LName + "\n" +
+                              "Clinic: " + clinicFound.LocationName + "\n" +
+                              "Appointment Date and Time: " + bkg.AppoinmentDateTime.ToString("yyyy-MM-dd") + " " + bkg.AppoinmentDateTime.ToString("HH:mm") + "\n";
+            }
+            else
+            {
+                bookingInfo = "Booking not found. Please ensure you have the right reference number";
+            }
+
+            return bookingInfo;
+
         }
 
         public List<string> GetClinicLocationNames()
@@ -80,6 +102,22 @@ namespace Controller
             }
 
             return clinicNameList;
+        }
+
+        public List<string> GetClinicNamesByPostalCode(string postalCode)
+        {
+            List<Clinic> clinicDBList = DBAccess.GetAllClinicsByPostalCode(postalCode);
+
+            List<string> clinicNameList = new List<string>();
+
+            foreach (Clinic cl in clinicDBList)
+            {
+                clinicNameList.Add(cl.LocationName);
+            }
+
+            return clinicNameList;
+
+
         }
 
         public int AddClinic(string locationName, string postalCode, int capacity)
@@ -114,9 +152,9 @@ namespace Controller
             return false;
         }
 
-        public bool RemoveBooking(int id)
+        public bool RemoveBooking(string referenceNumber)
         {
-            int resultRows = DBAccess.DeleteBooking(id);
+            int resultRows = DBAccess.DeleteBooking(referenceNumber);
 
             if (resultRows == 1)
             {
@@ -126,30 +164,36 @@ namespace Controller
             return false;
         }
 
-        public int BookAppointment(string locationName, int doseType, DateTime selectTime, DateTime selectDate)
+        public int RetrieveClinicID(string locationName)
         {
             LoadClinics();
 
             Clinic clinicFound = ClinicList.Find(c => c.LocationName.ToLower() == locationName.ToLower());
 
-            int accID = LoggedinAccount.AccountID;
-            int clID = clinicFound.ClinicID;
+            return clinicFound.ClinicID;
+        }
 
+        public string BookAppointment(int accountID,int clinicID, int doseType, DateTime selectTime, DateTime selectDate)
+        {
             string reference = GenerateReference();
 
             string date = selectDate.ToString("yyyy-MM-dd");
             string time = selectTime.ToString("HH:mm");
 
 
-            int idResult = DBAccess.InsertBooking(accID, reference, clID, doseType, date, time);
+            int idResult = DBAccess.InsertBooking(accountID, reference, clinicID, doseType, date, time);
 
             // After successful insert, update clinic capacity
             if (idResult >= 1)
             {
-                DBAccess.UpdateClinicCapacity(clID);
+                DBAccess.UpdateClinicCapacityDecrease(clinicID);
+            }
+            else
+            {
+                reference = string.Empty;
             }
 
-            return idResult;
+            return reference;
 
         }
 

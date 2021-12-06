@@ -150,27 +150,65 @@ namespace Model
             }
         }
 
-        public static List<Booking> GetAllBookingsOfUser(int id)
+        public static List<Clinic> GetAllClinicsByPostalCode(string postalCode)
         {
             try
             {
-                SqlCommand sqlCommand = new SqlCommand("SELECT * FROM [Booking] WHERE AccountID = @ID", sqlConn);
+                Clinic cl = null;
+                SqlCommand sqlCommand = new SqlCommand("SELECT * FROM [Clinic] WHERE PostalCode LIKE @postalCode", sqlConn);
                 sqlCommand.CommandType = CommandType.Text;
-
-                sqlCommand.Parameters.AddWithValue("@ID", id);
+                string searchTerm = "%" + postalCode.Substring(0,3) + "%";
+                sqlCommand.Parameters.AddWithValue("@postalCode", searchTerm);
 
                 sqlConn.Open();
 
                 // reads the result
                 SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
 
-                List<Booking> bookingList = new List<Booking>();
+                List<Clinic> clinicList = new List<Clinic>();
 
                 // read all rows
                 while (sqlDataReader.Read())
                 {
-                    Booking bkg = new Booking();
+                    cl = new Clinic();
+                    cl.ClinicID = sqlDataReader.GetInt32(0);
+                    cl.LocationName = sqlDataReader[1].ToString();
+                    cl.PostalCode = sqlDataReader[2].ToString();
+                    cl.Capacity = sqlDataReader.GetInt32(3);
 
+                    clinicList.Add(cl);
+
+                }
+
+                sqlConn.Close();
+
+                return clinicList;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public static Booking GetBookingByReferenceNumber(string referenceNumber)
+        {
+            try
+            {
+                SqlCommand sqlCommand = new SqlCommand("SELECT * FROM [Booking] WHERE ReferenceNumber = @referenceNumber", sqlConn);
+                sqlCommand.CommandType = CommandType.Text;
+
+                sqlCommand.Parameters.AddWithValue("@referenceNumber", referenceNumber);
+
+                sqlConn.Open();
+
+                // reads the result
+                SqlDataReader sqlDataReader = sqlCommand.ExecuteReader();
+
+                Booking bkg = new Booking();
+
+                // read all rows
+                while (sqlDataReader.Read())
+                {
                     bkg.BookingID = sqlDataReader.GetInt32(0);
                     bkg.AccountID = sqlDataReader.GetInt32(1);
                     bkg.ReferenceNumber = sqlDataReader[2].ToString();
@@ -179,13 +217,11 @@ namespace Model
                     TimeSpan AppointmentTime = (TimeSpan)sqlDataReader[6];
                     DateTime date = (DateTime)sqlDataReader[5];
                     bkg.AppoinmentDateTime = date + AppointmentTime;
-
-                    bookingList.Add(bkg);
                 }
 
                 sqlConn.Close();
 
-                return bookingList;
+                return bkg;
             }
             catch (Exception e)
             {
@@ -250,14 +286,14 @@ namespace Model
             }
         }
 
-        public static int DeleteBooking(int id)
+        public static int DeleteBooking(string referenceNumber)
         {
             try
             {
-                SqlCommand sqlCommand = new SqlCommand("DELETE FROM [Booking] WHERE BookingID = @ID", sqlConn);
+                SqlCommand sqlCommand = new SqlCommand("DELETE FROM [Booking] WHERE ReferenceNumber = @referenceNumber", sqlConn);
                 sqlCommand.CommandType = CommandType.Text;
 
-                sqlCommand.Parameters.AddWithValue("@ID", id);
+                sqlCommand.Parameters.AddWithValue("@referenceNumber", referenceNumber);
 
                 sqlConn.Open();
 
@@ -309,7 +345,7 @@ namespace Model
             }
         }
 
-        public static void UpdateClinicCapacity(int id)
+        public static void UpdateClinicCapacityDecrease(int id)
         {
             try
             {
