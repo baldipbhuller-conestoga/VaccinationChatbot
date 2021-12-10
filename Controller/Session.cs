@@ -18,6 +18,9 @@ namespace Controller
         private Account account;
         private Booking booking;
         private string referenceNumberForCancelOrGet;
+        private bool isAccountInfoComplete;
+        private bool isBookingInfoComplete;
+        private bool inputErrorFlag;
 
         public Session(){
             msgHandler = new MessageHandler();
@@ -37,6 +40,7 @@ namespace Controller
                 this.nCur = State.HELP;
             }
 
+            inputErrorFlag = false;
             switch (this.nCur)
             {
                 case State.WELCOMING:
@@ -57,7 +61,15 @@ namespace Controller
                     break;
 
                 case State.BEGINACCOUNT:
-                    bool isAccountInfoComplete = formulateAccount(sInMessage, infoCounter);
+
+                    if (ValidationService.validateAccountInput(sInMessage, infoCounter))
+                    {
+                        isAccountInfoComplete = formulateAccount(sInMessage, infoCounter);
+                    }
+                    else
+                    {
+                        inputErrorFlag = true;
+                    }
 
                     if (isAccountInfoComplete)
                     {
@@ -65,6 +77,12 @@ namespace Controller
                         infoCounter = 0;
                         sMessage = msgHandler.GatherBookingInfo(infoCounter, account.PostalCode);
                         
+                    }
+                    else if(inputErrorFlag)
+                    {
+                        infoCounter--;
+                        sMessage = msgHandler.getErrorMessage() + msgHandler.GatherInfo(infoCounter);
+                        infoCounter++;
                     }
                     else
                     {
@@ -75,7 +93,7 @@ namespace Controller
                     break;
 
                 case State.BOOK:
-                    bool isBookingInfoComplete = formulateBooking(sInMessage, infoCounter);
+                    isBookingInfoComplete = formulateBooking(sInMessage, infoCounter);
 
                     if (isBookingInfoComplete)
                     {

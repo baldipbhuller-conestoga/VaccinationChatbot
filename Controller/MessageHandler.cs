@@ -103,7 +103,7 @@ namespace Controller
                 replyMessage = infoToAsk[infoCounter];
                 if (infoCounter == 1)
                 {
-                    ConfigurationManager.RefreshSection("connectionStrings");
+                    //ConfigurationManager.RefreshSection("connectionStrings");
                     List<string> clinicNames = controller.GetClinicNamesByPostalCode(postalCode);
 
                     foreach(string name in clinicNames)
@@ -202,6 +202,11 @@ namespace Controller
         {
             return controller.GetBookingInfo(referenceNumber);
 
+        }
+
+        public string getErrorMessage()
+        {
+            return "Incorrect input. Please input again.\n";
         }
     }
 }
